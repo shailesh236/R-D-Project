@@ -1,0 +1,366 @@
+def demo(request):
+    # if request.method == 'POST':
+    #     file = request.FILES['file']
+    #     file_save = default_storage.save(file.name, file)
+    #     storage.child("files/" + file.name).put("media/" + file.name)
+    #     delete = default_strage.delete(file.name)
+    #     messages.success(request, "File upload in Firebase Storage successful")
+    #     return redirect('main')
+    # else:
+    #     return render(request, 'index.html')
+    msg=""
+    if request.method=="POST":
+      butt=request.POST["Send"]
+
+      if butt=="Insert":
+        table=database.child("Employee_Details").get().val()
+        data=list(table.items())
+        eid=[]
+        for i in data:
+          eid.append(i[0])
+        name= request.POST.get('name')
+        address= request.POST.get('adr')
+        city= request.POST.get('city')
+        gender= request.POST.get('gender')
+        vehicle= request.POST.getlist('vehicle')
+        id= request.POST.get('id')
+        url= request.POST.get('url')
+
+        
+        if id in eid:
+          msg="Employee ID already exists!"
+          return render(request,'index.html',{'msg':msg})
+  
+        else:
+          
+    # storage.child(image.name).put(image)
+    # print(storage.child(image).get_url(None))
+
+          data = {
+            "id":id,
+            "name":name,
+            "address":address,
+            "city":city,
+            "gender":gender,
+            "vehicle":vehicle,
+            "url":url,
+          }
+
+          database.child("Employee_Details").child(id).set(data)
+          msg="Record Inserted"
+          return render(request,'index.html',{'msg':msg})
+      
+      elif butt=="Select":
+        try:
+          id= request.POST.get('id')
+          eid=database.child("Employee_Details").child(id).child("id").get().val()
+          name=database.child("Employee_Details").child(id).child("name").get().val()
+          adr=database.child("Employee_Details").child(id).child("address").get().val()
+          city=database.child("Employee_Details").child(id).child("city").get().val()
+          gender=database.child("Employee_Details").child(id).child("gender").get().val()
+          veh=database.child("Employee_Details").child(id).child("vehicle").get().val()
+          url=database.child("Employee_Details").child(id).child("url").get().val()
+          veh1=''
+          veh2=''
+          veh3=''
+          for i in veh:
+            if i=="Car":
+              veh2="Car"
+            elif i=="Bike":
+              veh1="Bike"
+            elif i=="Scooter":
+              veh3="Scooter"
+          return render(request,'index.html',{'id':eid,'name':name,'adr':adr,'city':city,'veh1':veh1,'veh2':veh2,'veh3':veh3,'gender':gender,'url':url})
+        except:
+          msg="No Employee found!"
+          return render(request,'index.html',{'msg':msg})
+
+      elif butt=="Update":
+        name= request.POST.get('name')
+        address= request.POST.get('adr')
+        city= request.POST.get('city')
+        gender= request.POST.get('gender')
+        vehicle= request.POST.getlist('vehicle')
+        id= request.POST.get('id')
+        url= request.POST.get('url')
+
+        database.child("Employee_Details").child(id).update({"id":id})
+        database.child("Employee_Details").child(id).update({"name":name})
+        database.child("Employee_Details").child(id).update({"address":address})
+        database.child("Employee_Details").child(id).update({"city":city})
+        database.child("Employee_Details").child(id).update({"gender":gender})
+        database.child("Employee_Details").child(id).update({"vehicle":vehicle})
+        database.child("Employee_Details").child(id).update({"url":url})
+
+        msg="Record Updated"
+        return render(request,'index.html',{'msg':msg})
+
+      elif butt=="Delete":
+        id= request.POST.get('id')
+        database.child("Employee_Details").child(id).remove()
+        msg="Record Deleted"
+        return render(request,'index.html',{'msg':msg})
+        
+      elif butt=="SelectAll":
+        table=database.child("Employee_Details").get().val()
+        data=list(table.items())
+        eid=[]
+        name=[]
+        adr=[]
+        city=[]
+        gender=[]
+        veh=[]
+        url=[]
+        for i in data:
+          eid.append(i[0])
+        # print(eid)
+        for j in eid:
+          nam=database.child("Employee_Details").child(j).child("name").get().val()
+          ad=database.child("Employee_Details").child(j).child("address").get().val()
+          cit=database.child("Employee_Details").child(j).child("city").get().val()
+          gende=database.child("Employee_Details").child(j).child("gender").get().val()
+          ve=database.child("Employee_Details").child(j).child("vehicle").get().val()
+          ur=database.child("Employee_Details").child(j).child("url").get().val()
+          name.append(nam)
+          adr.append(ad)
+          city.append(cit)
+          gender.append(gende)
+          veh.append(ve)
+          url.append(ur)
+        # print(name)
+        # print(adr)
+        # print(city)
+        # print(gender)
+        # print(veh)
+        # print(url)
+        com_list=zip(eid,name,adr,city,gender,veh,url)
+        return render(request,'result.html',{'com_lis':com_list})
+
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Employee Details</title>
+        </head>
+        <body>
+            <h1><center>Employee Details</center></h1>
+            <form name="Employee_Form" id="Employee_Form" action="demo" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                ID : <input type="text" id="id" name="id" required/ value="{{id|default_if_none:''}}"><br>
+                Name : <input type="text" id="name" name="name" required value="{{name|default_if_none:''}}"/><br>
+                Address : <br><textarea id="adr" name="adr" required>{{adr|default_if_none:''}}</textarea><br>
+                City : <select name="city" id="city" required><br>
+                    <option value="" selected disabled>Select City</option>
+                    <option value="Hyderabad" {% if city and 'Hyderabad' == city %}selected{% endif %}> Hyderabad </option>
+                    <option value="Delhi" {% if city and 'Delhi' == city %}selected{% endif %}> Delhi </option>
+                    <option value="Mumbai" {% if city and 'Mumbai' == city %}selected{% endif %}> Mumbai </option>
+                    <option value="Chennai" {% if city and 'Chennai' == city %}selected{% endif %}> Chennai </option>
+                    <option value="Kolkata" {% if city and 'Kolkata' == city %}selected{% endif %}> Kolkata </option>
+                </select><br>
+                Gender : <br> 
+                <label>
+                <input type="radio" name="gender" value="Male" required/ {% if gender and gender == 'Male' %}checked{% endif %}> Male    
+                <br>
+                </label>
+                <label>
+                <input type="radio" name="gender" value="Female"/ {% if gender and gender == 'Female' %}checked{% endif %}> Female 
+                <br/>    
+                </label>
+                <label>
+                <input type="radio" name="gender" value="Other"/ {% if gender and gender == 'Other' %}checked{% endif %}> Other 
+                <br>       
+                </label>
+                Vehicle : <br>
+                <input type="checkbox" name="vehicle" value="Bike" {% if veh1 and veh1 == 'Bike' %}checked{% endif %}> Bike
+                <br>
+                <input type="checkbox" name="vehicle" value="Car" {% if veh2 and veh2 == 'Car' %}checked{% endif %}> Car
+                <br>
+                <input type="checkbox" name="vehicle" value="Scooter" {% if veh3 and veh3 == 'Scooter' %}checked{% endif %}> Scooter
+                <br>
+                Profile Image Upload:
+                <br>
+                <input type="file" name="files[]" id="files" onchange="uploadImage()" accept="image/*">
+                <input type="hidden" name="url" id="url"><br>
+                {% if url %}
+                  <br/>
+                  <img src="{{url}}" width="250"/>
+                  <br/>
+                {% endif %}
+                <br><br>
+                {% comment %} <button type="button" onclick="uploadimage()">Upload</button><br><br> {% endcomment %}
+                <button type="submit" name="Send" value="Insert">Insert</button>
+                <button type="submit" name='Send' value="Select" formnovalidate>Select</button>
+                <button type="submit" name='Send' value="Delete" formnovalidate>Delete</button>
+                <button type="submit" name='Send' value="Update">Update</button>
+                <button type="submit" name='Send' value="SelectAll" formnovalidate>SelectAll</button>
+                <h4 style="color:red;">{{msg}}</h4 >
+            </form>
+        </body>
+        <script src="https://www.gstatic.com/firebasejs/3.7.4/firebase.js"></script>
+        <script>
+            var config = {
+                "apiKey": "AIzaSyB84D7Ri5_QRV5kYtrwNwanS_oAASoJXs8",
+                "authDomain": "djangocrud-3561c.firebaseapp.com",
+                "databaseURL": "https://djangocrud-3561c-default-rtdb.firebaseio.com",
+                "projectId": "djangocrud-3561c",
+                "storageBucket": "djangocrud-3561c.appspot.com",
+                "messagingSenderId": "16200984584",
+                "appId": "1:16200984584:web:2f9b492465c081668889bd"
+            };
+            firebase.initializeApp(config);
+            function uploadImage(){
+              var storage = firebase.storage();
+              var file = document.getElementById('files').files[0];
+              var storageRef = storage.ref();
+              var thisref = storageRef.child(file.name).put(file);
+            thisref.on('state_changed',function(snapshot){
+                console.log("File uploaded")
+            },
+            function(error){
+              alert("Error uploading image!")
+            },
+            function(){
+              var downloadURL = thisref.snapshot.downloadURL;
+              document.getElementById("url").value = downloadURL;
+              alert("Image Uploaded Successfully!");
+            });
+          }
+        </script>
+        </html>
+
+        <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <title>Employee List</title>
+    <style>
+      body{
+        background-color:#FCBF49;
+      }
+      .wrapper{margin:10vh}
+      //post card styles
+      
+      .card{
+        border: none;
+        transition: all 500ms cubic-bezier(0.19, 1, 0.22, 1);
+       overflow:hidden;
+       border-radius:20px;
+       min-height:450px;
+         box-shadow: 0 0 12px 0 rgba(0,0,0,0.2);
+      
+       @media (max-width: 768px) {
+        min-height:350px;
+      }
+      
+      @media (max-width: 420px) {
+        min-height:300px;
+      }
+      
+       &.card-has-bg{
+       transition: all 500ms cubic-bezier(0.19, 1, 0.22, 1);
+        background-size:120%;
+        background-repeat:no-repeat;
+        background-position: center center;
+        &:before {
+          content: '';
+          position: absolute;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          left: 0;
+          background: inherit;
+          -webkit-filter: grayscale(1);
+        -moz-filter: grayscale(100%);
+        -ms-filter: grayscale(100%);
+        -o-filter: grayscale(100%);
+        filter: grayscale(100%);}
+      
+        &:hover {
+          transform: scale(0.98);
+           box-shadow: 0 0 5px -2px rgba(0,0,0,0.3);
+          background-size:130%;
+           transition: all 500ms cubic-bezier(0.19, 1, 0.22, 1);
+      
+          .card-img-overlay {
+            transition: all 800ms cubic-bezier(0.19, 1, 0.22, 1);
+            background: rgb(35,79,109);
+           background: linear-gradient(0deg, rgba(4,69,114,0.5) 0%, rgba(4,69,114,1) 100%);
+           }
+        }
+      }
+       .card-footer{
+        background: none;
+         border-top: none;
+          .media{
+           img{
+             border:solid 3px rgba(234,95,0,0.3);
+           }
+         }
+       }
+       .card-meta{color:orange}
+       .card-body{ 
+         transition: all 500ms cubic-bezier(0.19, 1, 0.22, 1);
+      }
+       &:hover {
+         .card-body{
+           margin-top:30px;
+           transition: all 800ms cubic-bezier(0.19, 1, 0.22, 1);
+         }
+       cursor: pointer;
+       transition: all 800ms cubic-bezier(0.19, 1, 0.22, 1);
+      }
+       .card-img-overlay {
+        transition: all 800ms cubic-bezier(0.19, 1, 0.22, 1);
+       background: rgb(35,79,109);
+      background: linear-gradient(0deg, rgba(35,79,109,0.3785889355742297) 0%, rgba(69,95,113,1) 100%);
+      }
+      }
+        {% comment %} table, th, td {
+          border: 1px solid black;
+        }
+        table {
+          border-spacing: 30px;
+        } {% endcomment %}
+        </style>
+</head>
+<body>
+  
+    <h2>Employee Details List </h2>
+    <table
+  cellspacing="3"
+  cellpadding="10"
+  style="width:80%"
+  class="col-md-1"
+  padding: 15px;
+  
+> 
+  <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Address</th>
+        <th>City</th>
+        <th>Gender</th>
+        <th>Vehicles</th>
+        <th>Image</th>
+  </tr>
+  {% for eid,name,adr,city,gender,veh,url in com_lis %}
+  <tr>
+        <br>    
+        <td>{{ eid }}</td>
+        <td>{{ name }}</td>
+        <td>{{ adr }}</td>
+        <td>{{ city }}</td>
+        <td>{{ gender }}</td>
+        <td>{{ veh }}</td>
+        <td><img src="{{ url }}" width="200" height="200"/></td>
+  </tr>
+  {% endfor %}
+  <br> 
+</body>
+</html>
